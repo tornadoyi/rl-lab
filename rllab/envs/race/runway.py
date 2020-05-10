@@ -4,8 +4,15 @@ from rllab.envs.gym import Env, spaces
 from rllab.envs import render
 
 class RunwayEnv(Env):
-    def __init__(self, length=1, init_pos=0, move_success_rate=1.0):
-        super(RunwayEnv, self).__init__()
+    def __init__(
+            self,
+            length=1,
+            init_pos=0,
+            move_success_rate=1.0,
+            **kwargs
+    ):
+
+        super(RunwayEnv, self).__init__(**kwargs)
 
         # config
         self._length = length
@@ -38,10 +45,10 @@ class RunwayEnv(Env):
             elif action == 2:
                 self._pos = np.clip(self._pos + 1, 0, self._length - 1)
 
+        # save ob
         ob = [0.0] * self._length
         ob[int(self._pos)] = 1.0
         self.store_observation(ob)
-        self.store_reward(0)
 
 
     def on_create_render(self, mode='human'): self._render = Render(self)
@@ -77,7 +84,7 @@ class Render(render.Application):
         render.font.blit_text(self.screen, '\n'.join([
                 'episodes: {}/{}'.format(self._env.steps, self._env.max_steps),
                 'process: {}/{}'.format(self._env._pos + 1, self._env._length),
-                'rewards: {}'.format(self._env.total_reward),
+                'rewards: {:.2f}'.format(self._env.total_reward),
             ]), (0, 0), render.font.Font(render.font.get_default_font(), 20), )
 
 
