@@ -8,6 +8,8 @@ env = gym.make('ShuttleRun-100m-hard-v0')
 #env = gym.make('Race-100m-hard-v0')
 env.reset()
 
+print(env.observation_space)
+
 while True:
     env.render()
 
