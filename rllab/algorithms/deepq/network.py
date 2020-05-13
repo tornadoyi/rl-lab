@@ -2,16 +2,16 @@ import torch
 from torch import nn
 from rllab.rl import features
 
-class QNet(nn.Module):
+class QFunc(nn.Module):
     def __init__(
             self,
             ob_space,
             ac_space,
-            hiddens=[256],
+            hiddens=(256),
             dueling=True,
             layer_norm=False,
     ):
-        super(QNet, self).__init__()
+        super(QFunc, self).__init__()
 
         self.dueling = dueling
 
@@ -21,7 +21,7 @@ class QNet(nn.Module):
         # create action score network
         l = []
         in_features = self.net_features.output_shape[1]
-        for hidden in hiddens:
+        for hidden in list(hiddens):
             l.append(nn.Linear(in_features, hidden))
             in_features = hidden
             if layer_norm: l.append(nn.LayerNorm([in_features]))
@@ -33,7 +33,7 @@ class QNet(nn.Module):
         if dueling:
             l = []
             in_features = self.net_features.output_shape[1]
-            for hidden in hiddens:
+            for hidden in list(hiddens):
                 l.append(nn.Linear(in_features, hidden))
                 in_features = hidden
                 if layer_norm: l.append(nn.LayerNorm([in_features]))
@@ -42,13 +42,13 @@ class QNet(nn.Module):
             self.net_state_score = nn.Sequential(*l)
 
 
-    def forward(self, x):
-        x = self.net_features(x)
-        self.action_score = self.net_action_score(x)
+    def forward(self, ob):
+        ob = self.net_features(ob)
+        self.action_score = self.net_action_score(ob)
 
         # calculate advantage for dueling network
         if self.dueling:
-            self.state_score = self.net_state_score(x)
+            self.state_score = self.net_state_score(ob)
             self.action_scores_mean = torch.mean(self.action_score, 1)
             self.action_scores_centered = self.action_score  - self.action_scores_mean.unsqueeze(0)
             self.q = self.state_score + self.action_scores_centered
