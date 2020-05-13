@@ -13,7 +13,7 @@ with open(join(dirname(__file__), NAME + '/VERSION'), 'rb') as f:
 
 setup(name=NAME,
       version=VERSION,
-      description="Lab of reinforcement learning includes games and algorithms",
+      description="Laboratory of reinforcement learning includes games and algorithms.",
       author='yi gu',
       author_email='390512308@qq.com',
       license='License :: OSI Approved :: Apache Software License',
@@ -23,7 +23,11 @@ setup(name=NAME,
       python_requires='>=3.7',
       install_requires = [
             'argparse',
+            'easydict'
       ],
-      entry_points = {
+      entry_points={
+            'console_scripts': [
+                  'rl-lab = rllab.cli:main',
+            ],
       },
-      )
+)
