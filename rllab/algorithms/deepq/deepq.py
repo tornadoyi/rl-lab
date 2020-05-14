@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from rllab.torchlab.nn import functional as F
+from rllab.torchlab import optim
 import numpy as np
 from .network import QFunc
 
@@ -10,7 +11,9 @@ class DeepQ(object):
             self,
             ob_space,
             ac_space,
+            optimizer={'name': 'Adam', 'lr': 1e-3},
             double_q=False,
+            grad_norm_clipping=None,
             gamma=1.0,
             **kwargs,
     ):
@@ -18,10 +21,14 @@ class DeepQ(object):
         self.ac_space = ac_space
         self.double_q = double_q
         self.gamma = gamma
+        self.grad_norm_clipping = grad_norm_clipping
 
         # q function
         self.net_q_eval = QFunc(ob_space, ac_space)
         self.net_q_target = QFunc(ob_space, ac_space)
+
+        # optimizer
+        self.optimizer = optim.build(params=self.net_q_eval.parameters(), **optimizer)
 
 
     def act(self, obs, eps):
@@ -50,11 +57,13 @@ class DeepQ(object):
             q_target = self.net_q_target(obs_n)
 
         # q scores for actions which we know were selected in the given state.
-        q_selected = torch.sum(q_eval * F.one_hot(acs, self.ac_space.n), 1)
+        q_eval_selected = torch.sum(q_eval * F.one_hot(acs, self.ac_space.n), 1)
 
-        # todo double q
+        # double q
         if self.double_q:
-            pass
+            q_eval_n = self.net_q_eval(obs_n)
+            max_q_ac_n = torch.argmax(q_eval_n, 1)
+            q_best = torch.sum(q_target * F.one_hot(max_q_ac_n, self.ac_space.n), 1)
         else:
             q_best = torch.max(q_target, 1)
 
@@ -62,13 +71,22 @@ class DeepQ(object):
         q_best = (1.0 - dones) * q_best
 
         # compute RHS of bellman equation
-        y = rews + self.gamma * q_best
+        q_target_selected = rews + self.gamma * q_best
 
         # compute the error (potentially clipped)
-        td_error = q_selected - q_target
+        td_error = q_eval_selected - q_target_selected
 
         # loss
         errors = F.huber_loss(td_error)
         errors = torch.mean(weights * errors)
 
         # compute optimization op (potentially with gradient clipping)
+        self.optimizer.zero_grad()
+        errors.backward()
+        if self.grad_norm_clipping is not None:
+            for p in self.net_q_eval.parameters(): nn.utils.clip_grad_norm(p, self.grad_norm_clipping)
+        self.optimizer.step()
+
+
+    def update_q_target(self):
+        self.net_q_target.load_state_dict(self.net_q_eval.state_dict())

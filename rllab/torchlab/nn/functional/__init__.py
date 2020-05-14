@@ -1,3 +1,3 @@
 
-from torch.functional import *
+from torch.nn.functional import *
 from .loss import *
