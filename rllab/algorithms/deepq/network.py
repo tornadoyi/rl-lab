@@ -7,16 +7,18 @@ class QFunc(nn.Module):
             self,
             ob_space,
             ac_space,
-            hiddens=(256),
+            hiddens=(256, ),
             dueling=True,
             layer_norm=False,
+            feature={},
+            **_,
     ):
         super(QFunc, self).__init__()
 
         self.dueling = dueling
 
         # create feature extractor
-        self.net_features = features.build(ob_space)
+        self.net_features = features.build(ob_space, **feature)
 
         # create action score network
         l = []
@@ -50,7 +52,7 @@ class QFunc(nn.Module):
         if self.dueling:
             self.state_score = self.net_state_score(ob)
             self.action_scores_mean = torch.mean(self.action_score, 1)
-            self.action_scores_centered = self.action_score  - self.action_scores_mean.unsqueeze(0)
+            self.action_scores_centered = self.action_score  - self.action_scores_mean.unsqueeze(1)
             self.q = self.state_score + self.action_scores_centered
         else:
             self.q = self.action_score

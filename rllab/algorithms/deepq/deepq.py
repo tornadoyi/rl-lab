@@ -1,8 +1,6 @@
 import torch
 from torch import nn
 from rllab.torchlab.nn import functional as F
-from rllab.torchlab import optim
-import numpy as np
 from .network import QFunc
 
 
@@ -11,43 +9,47 @@ class DeepQ(object):
             self,
             ob_space,
             ac_space,
-            optimizer={'name': 'Adam', 'lr': 1e-3},
             double_q=False,
             grad_norm_clipping=None,
             gamma=1.0,
-            **kwargs,
+            qfunc={},
+            **_,
     ):
         # config
+        self.ob_space = ob_space
         self.ac_space = ac_space
         self.double_q = double_q
         self.gamma = gamma
         self.grad_norm_clipping = grad_norm_clipping
 
         # q function
-        self.net_q_eval = QFunc(ob_space, ac_space)
-        self.net_q_target = QFunc(ob_space, ac_space)
-
-        # optimizer
-        self.optimizer = optim.build(params=self.net_q_eval.parameters(), **optimizer)
+        self.net_q_eval = QFunc(ob_space, ac_space, **qfunc)
+        self.net_q_target = QFunc(ob_space, ac_space, **qfunc)
 
 
-    def act(self, obs, eps):
+    @property
+    def parameters(self): return self.net_q_eval.parameters()
+
+
+    def act(self, ob, eps):
+        obs = torch.as_tensor(ob, dtype=torch.float32).reshape(*[(-1, ) + self.ob_space.shape])
+
         # todo noise action
         deterministic_actions = torch.argmax(self.net_q_eval(obs), 1)
-        random_actions = deterministic_actions.uniform_(0, self.ac_space.n).int()
-        conditions = deterministic_actions.uniform_(0, 1) < eps
+        random_actions = deterministic_actions.float().uniform_(0.0, float(self.ac_space.n)).long()
+        conditions = deterministic_actions.float().uniform_(0, 1) < eps
         final_actions = torch.where(conditions, random_actions, deterministic_actions)
-        return final_actions
+        return final_actions.squeeze().data.numpy()
 
 
-    def learn(self, obs, acs, rews, obs_n, dones, weights=None):
+    def learn(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
         # convert to tensor
-        obs = torch.from_numpy(obs)
-        acs = torch.from_numpy(acs)
-        rews = torch.from_numpy(rews)
-        obs_n = torch.from_numpy(obs_n)
-        dones = torch.from_numpy(dones)
-        weights = torch.from_numpy(weights or [1.0]*obs.shape[0])
+        obs = torch.as_tensor(obs, dtype=torch.float32)
+        acs = torch.as_tensor(acs, dtype=torch.long)
+        rews = torch.as_tensor(rews, dtype=torch.float32)
+        obs_n = torch.as_tensor(obs_n, dtype=torch.float32)
+        dones = torch.as_tensor(dones, dtype=torch.float32)
+        weights = torch.as_tensor(weights or [1.0]*obs.shape[0], dtype=torch.float32)
 
         # calculate q evaluation
         q_eval = self.net_q_eval(obs)
@@ -65,7 +67,7 @@ class DeepQ(object):
             max_q_ac_n = torch.argmax(q_eval_n, 1)
             q_best = torch.sum(q_target * F.one_hot(max_q_ac_n, self.ac_space.n), 1)
         else:
-            q_best = torch.max(q_target, 1)
+            q_best = q_target.max(1)[0]
 
         # mask terminal
         q_best = (1.0 - dones) * q_best
@@ -81,12 +83,19 @@ class DeepQ(object):
         errors = torch.mean(weights * errors)
 
         # compute optimization op (potentially with gradient clipping)
-        self.optimizer.zero_grad()
+        optimizer.zero_grad()
         errors.backward()
         if self.grad_norm_clipping is not None:
             for p in self.net_q_eval.parameters(): nn.utils.clip_grad_norm(p, self.grad_norm_clipping)
-        self.optimizer.step()
+        optimizer.step()
 
 
-    def update_q_target(self):
+    def update_target_network(self):
         self.net_q_target.load_state_dict(self.net_q_eval.state_dict())
+
+
+
+
+
+
+

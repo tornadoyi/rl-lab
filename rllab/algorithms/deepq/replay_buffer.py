@@ -2,6 +2,11 @@ import random
 import numpy as np
 
 
+def build(**kwargs):
+    size = kwargs.get('size', 50000)
+    return ReplayBuffer(size)
+
+
 class ReplayBuffer(object):
     def __init__(self, size):
         """Create Replay buffer.

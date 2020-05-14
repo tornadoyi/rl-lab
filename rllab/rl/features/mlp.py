@@ -1,7 +1,6 @@
 import numpy as np
-import torch
 from torch import nn
-from . import register
+from .features import register
 
 
 @register("mlp")
@@ -29,8 +28,10 @@ class MLP(nn.Sequential):
         for i in range(num_layers):
             # fc
             x = nn.Linear(in_features, num_hidden)
-            nn.init.orthogonal(x.weight.data, gain=np.sqrt(2))
-            nn.init.constant(x.bias.data, 0.0)
+            nn.init.orthogonal_(x.weight.data, gain=np.sqrt(2))
+            nn.init.constant_(x.bias.data, 0.0)
+            l.append(x)
+            in_features = num_hidden
 
             # normalize
             if layer_norm: l.append(nn.LayerNorm([in_features]))
