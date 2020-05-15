@@ -1,26 +1,22 @@
 import sys
-import argparse
 from rllab import cli
-
-MODULE = __file__.split('/')[-3]
+from rllab import define
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='experiment')
-    parser.add_argument("cmd", choices=['train', 'play'])
-    cmd = parser.parse_args().cmd
-    argv = [MODULE, cmd]
+    cmd, extras = sys.argv[1], sys.argv[2:]
     if cmd == 'train':
-        argv += [
+        argv = [
             'env.id="CartPole-v0"',
             'total_steps=100000',
             'optimizer={"name":"Adam","lr":1e-3}',
             'rb.size=50000',
             'explore.fraction=0.1', 'explore.final=0.02',
         ]
-    else:
-        argv += [
+    elif cmd == 'play':
+        argv = [
 
         ]
+    else: raise Exception('Invalid command {}'.format(cmd))
 
-    sys.argv = [sys.argv[0]] + argv
+    sys.argv = [sys.argv[0], define.which_module(), cmd] + argv + extras
     cli.main()

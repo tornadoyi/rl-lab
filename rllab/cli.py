@@ -2,8 +2,17 @@ import signal
 import argparse
 from easydict import EasyDict as edict
 from rllab import algorithms as modules
+from rllab import define
 
 MODULES = dict([(n, getattr(modules, n)) for n in dir(modules) if hasattr(getattr(modules, n), 'execute')])
+
+
+def initialize_path(args):
+    # set path
+    if args.root_path is not None: define.set_root_path(args.root_path)
+    if args.model_path is not None: define.set_model_path(args.model_path)
+    if args.profiling_path is not None: define.set_profiling_path(args.profiling_path)
+    if args.exp_path is not None: define.set_profiling_path(args.exp_path or getattr(args, 'env', {}).get('id'))
 
 
 def parse_args():
@@ -11,7 +20,14 @@ def parse_args():
     parser.add_argument("module", choices=list(MODULES.keys()), help='supported modules')
     parser.add_argument("command", help='command of module')
     parser.add_argument('arguments', nargs='*', default=[], help='arguments of command')
+    parser.add_argument('--root-path', type=str, default=None, help='root path')
+    parser.add_argument('--model-path', type=str, default=None, help='model path')
+    parser.add_argument('--profiling-path', type=str, default=None, help='profiling path')
+    parser.add_argument('--exp-path', type=str, default=None, help='experiment path')
     args = parser.parse_args()
+
+    # initialize path
+    initialize_path(args)
 
     # parse parameters
     dargs = edict()

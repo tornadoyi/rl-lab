@@ -23,7 +23,8 @@ setup(name=NAME,
       python_requires='>=3.7',
       install_requires = [
             'argparse',
-            'easydict'
+            'easydict',
+            'pygamme'
       ],
       entry_points={
             'console_scripts': [
