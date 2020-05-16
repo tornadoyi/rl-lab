@@ -1,7 +1,7 @@
 
 
 from pygame import *
-from .application import Application
+from .render import Render
 
 
 del font

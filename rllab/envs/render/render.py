@@ -1,7 +1,7 @@
 import pygame
 
 
-class Application(object):
+class Render(object):
 
     def __init__(self, env, caption=None, win_size=(640, 480)):
         self._env = env
