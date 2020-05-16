@@ -7,52 +7,46 @@ class ShuttleRunEnv(RunwayEnv):
 
         super(ShuttleRunEnv, self).__init__(**kwargs)
 
-    def on_reset(self):
-        super(ShuttleRunEnv, self).on_reset()
+    def reset(self):
+        ob = super(ShuttleRunEnv, self).reset()
         self._half_finish = False
-
-        ob = [0] + self._observations[-1]
-        self.store_observation(ob)
+        return [float(self._half_finish)] + ob
 
 
-    def on_step(self, action):
-        super(ShuttleRunEnv, self).on_step(action)
 
-        # save ob
-        ob = [1] + self._observations[-1] if self._half_finish else [0] + self._observations[-1]
-        self.store_observation(ob)
-
-        # check terminated
-        if self._terminated: return
+    def step(self, action):
+        ob, r, d, info = super(ShuttleRunEnv, self).step(action)
 
         # reward
-        reward = 0
+        r = 0
         if self._score_mode == 'sparse':
             if self._half_finish and self._pos == 0:
-                reward = 1.0
+                r = 1.0
         elif self._score_mode == 'guide':
             if not self._half_finish:
-                if action == 1: reward = -1.0
-                elif action == 2: reward = 1.0
+                if action == 1: r = -1.0
+                elif action == 2: r = 1.0
             else:
-                if action == 1: reward = 1.0
-                elif action == 2: reward = -1.0
+                if action == 1: r = 1.0
+                elif action == 2: r = -1.0
         else:
-            reward = -1.0
+            r = -1.0
             if not self._half_finish:
-                if self._pos == self._length - 1: reward = 1.0
+                if self._pos == self._length - 1: r = 1.0
             else:
-                if self._pos == 0: reward = 1.0
-
-        self.store_reward(reward)
+                if self._pos == 0: r = 1.0
 
         # half finish and terminal
         if self._pos == self._length - 1: self._half_finish = True
-        if self._half_finish and self._pos == 0: self._terminated = True
+        if self._half_finish and self._pos == 0: d = True
+
+        # observation
+        ob = [float(self._half_finish)] + ob
+        return ob, r, d, info
 
 
-
-
+    def render_infos(self):
+        return ['half goal: {}'.format('ok' if self._half_finish else 'no')]
 
 
 
@@ -70,7 +64,7 @@ register(
 register(
     id='ShuttleRun-100m-medium-v0',
     entry_point='rllab.envs.race:ShuttleRunEnv',
-    kwargs={'length': 100, 'move_success_rate': 0.9, 'score_mode': 'normal', 'max_steps_reward': -1.0},
+    kwargs={'length': 100, 'move_success_rate': 0.9, 'score_mode': 'normal'},
     max_episode_steps=int(3 * 200 / 0.9),
     reward_threshold=1.0,
 )
@@ -78,7 +72,7 @@ register(
 register(
     id='ShuttleRun-100m-hard-v0',
     entry_point='rllab.envs.race:ShuttleRunEnv',
-    kwargs={'length': 100, 'move_success_rate': 0.8, 'score_mode': 'sparse', 'max_steps_reward': -1.0},
+    kwargs={'length': 100, 'move_success_rate': 0.8, 'score_mode': 'sparse'},
     max_episode_steps=int(2 * 200 / 0.8),
     reward_threshold=1.0,
 )

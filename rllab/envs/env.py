@@ -1,6 +1,19 @@
 
 import gym
+from easydict import EasyDict as edict
 
-def make(**kwargs):
-    name = kwargs['id']
-    return gym.make(name).unwrapped
+class Env(gym.Env):
+
+    @property
+    def shared_data(self): return self.__shared_data
+
+    def reset(self):
+        self.__shared_data = edict()
+        return None
+
+
+
+
+
+
+

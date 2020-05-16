@@ -34,3 +34,4 @@ class Profiling(object):
     def flush(self, global_step, **indicator_kwargs):
         for tag, id in self._indicators.items():
             id.flush(self._writer, global_step, **indicator_kwargs.get(tag, {}))
+        self._indicators = OrderedDict()

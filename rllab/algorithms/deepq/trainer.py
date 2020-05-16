@@ -1,4 +1,3 @@
-import torch
 from rllab.torchlab import optim
 from rllab import envs
 from rllab.rl.common.schedule import LinearSchedule

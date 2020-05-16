@@ -1,9 +1,9 @@
 import numpy as np
-
-from rllab.envs.gym import Env, spaces
+import gym
+from gym import spaces
 from rllab.envs import render
 
-class RunwayEnv(Env):
+class RunwayEnv(gym.Env):
     def __init__(
             self,
             length=1,
@@ -30,14 +30,14 @@ class RunwayEnv(Env):
         self._render = None
 
 
-    def on_reset(self):
+    def reset(self):
         self._pos = self._init_pos
         ob = [0.0] * self._length
         ob[int(self._pos)] = 1.0
-        self.store_observation(ob)
+        return ob
 
 
-    def on_step(self, action):
+    def step(self, action):
         # move
         if action != 0 and np.random.rand() < self._move_success_rate:
             if action == 1:
@@ -48,10 +48,15 @@ class RunwayEnv(Env):
         # save ob
         ob = [0.0] * self._length
         ob[int(self._pos)] = 1.0
-        self.store_observation(ob)
+        return ob, 0, False, {}
 
 
-    def on_create_render(self, mode='human'): self._render = Render(self)
+    def render(self, mode='human'):
+        if self._render is None: self._render = Render(self)
+        self._render()
+
+
+    def render_infos(self): return []
 
 
 class Render(render.Application):
@@ -80,11 +85,27 @@ class Render(render.Application):
         player_x = way_rect.topleft[0] + way_rect.width * ratio
         render.draw.line(self.screen, render.Color('red'), (player_x, way_rect.topleft[1]), (player_x, way_rect.bottomleft[1]), 5)
 
-        # draw information
-        render.font.blit_text(self.screen, '\n'.join([
-                'episodes: {}/{}'.format(self._env.steps, self._env.max_steps),
-                'process: {}/{}'.format(self._env._pos + 1, self._env._length),
-                'rewards: {:.2f}'.format(self._env.total_reward),
-            ]), (0, 0), render.font.Font(render.font.get_default_font(), 20), )
+
+        # episodes
+        infos = []
+        shared = self._env.shared_data
+        if 'steps' in shared:
+            if self._env.spec.max_episode_steps is not None:
+                infos.append('episodes: {}/{}'.format(shared.steps, self._env.spec.max_episode_steps))
+            else:
+                infos.append('episodes: {}'.format(shared.steps))
+
+        # reward
+        if 'total_reward' in shared:
+            infos.append('rewards: {}'.format(shared.total_reward))
+
+        # location
+        infos.append('location: {}/{}'.format(self._env._pos + 1, self._env._length))
+
+        # extra
+        infos += self._env.render_infos()
+
+        # draw informations
+        render.font.blit_text(self.screen, '\n'.join(infos), (0, 0), render.font.Font(render.font.get_default_font(), 20), )
 
 
