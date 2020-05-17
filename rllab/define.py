@@ -36,7 +36,7 @@ def module_path(): return os.path.join(root_path(), which_module())
 
 
 def experiment_path():
-    if _EXPERIMENT_PATH is not None: raise Exception('empty experiment path')
+    if _EXPERIMENT_PATH is None: raise Exception('empty experiment path')
     if os.path.isabs(_EXPERIMENT_PATH): return _EXPERIMENT_PATH
     return os.path.join(module_path(), _EXPERIMENT_PATH)
 

@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from rllab.torchlab.nn import functional as F
+from rllab.rl.profiling import indicator
 from .network import QFunc
 
 
@@ -82,12 +83,26 @@ class DeepQ(object):
         errors = F.huber_loss(td_error)
         errors = torch.mean(weights * errors)
 
-        # compute optimization op (potentially with gradient clipping)
+        # compute gradients (potentially with gradient clipping)
         optimizer.zero_grad()
         errors.backward()
         if self.grad_norm_clipping is not None:
             for p in self.net_q_eval.parameters(): nn.utils.clip_grad_norm(p, self.grad_norm_clipping)
         optimizer.step()
+
+        # profiling
+        indicators = {
+            'deepq/loss':                 (errors,                        lambda: indicator('scalar').cond('update')),
+            'deepq/td_error':             (torch.mean(td_error),          lambda: indicator('scalar').cond('update')),
+            'deepq/q_eval_selected':      (torch.mean(q_eval_selected),   lambda: indicator('scalar').cond('update')),
+            'deepq/q_target_selected':    (torch.mean(q_target_selected), lambda: indicator('scalar').cond('update')),
+        }
+
+        # gradients profiling
+        for k, v in self.net_q_eval.state_dict().items():
+            indicators['gradients/{}'.format(k)] = (v.abs().mean(), lambda: indicator('scalar').cond('update'))
+
+        return indicators
 
 
     def update_target_network(self):

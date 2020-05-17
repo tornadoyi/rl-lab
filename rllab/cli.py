@@ -7,12 +7,12 @@ from rllab import define
 MODULES = dict([(n, getattr(modules, n)) for n in dir(modules) if hasattr(getattr(modules, n), 'execute')])
 
 
-def initialize_path(args):
+def initialize_path(args, dargs):
     # set path
     if args.root_path is not None: define.set_root_path(args.root_path)
     if args.model_path is not None: define.set_model_path(args.model_path)
     if args.profiling_path is not None: define.set_profiling_path(args.profiling_path)
-    if args.exp_path is not None: define.set_profiling_path(args.exp_path or getattr(args, 'env', {}).get('id'))
+    define.set_experiment_path(dargs.arguments.env.id if args.exp_path is None else args.exp_path)
 
 
 def parse_args():
@@ -25,9 +25,6 @@ def parse_args():
     parser.add_argument('--profiling-path', type=str, default=None, help='profiling path')
     parser.add_argument('--exp-path', type=str, default=None, help='experiment path')
     args = parser.parse_args()
-
-    # initialize path
-    initialize_path(args)
 
     # parse parameters
     dargs = edict()
@@ -56,6 +53,10 @@ def parse_args():
             else:
                 if n not in d: d[n] = {}
                 d = d[n]
+
+    # initialize path
+    initialize_path(args, dargs)
+
     return dargs
 
 

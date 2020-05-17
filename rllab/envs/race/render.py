@@ -32,16 +32,15 @@ class Render(render.Render):
 
         # episodes
         infos = []
-        shared = self._env.shared_data
-        if 'steps' in shared:
+        if hasattr(self._env, 'steps'):
             if self._env.spec.max_episode_steps is not None:
-                infos.append('episodes: {}/{}'.format(shared.steps, self._env.spec.max_episode_steps))
+                infos.append('episodes: {}/{}'.format(self._env.steps, self._env.spec.max_episode_steps))
             else:
-                infos.append('episodes: {}'.format(shared.steps))
+                infos.append('episodes: {}'.format(self._env.steps))
 
         # reward
-        if 'total_reward' in shared:
-            infos.append('rewards: {}'.format(shared.total_reward))
+        if hasattr(self._env, 'total_reward'):
+            infos.append('rewards: {}'.format(self._env.total_reward))
 
         # location
         infos.append('location: {}/{}'.format(self._env._pos + 1, self._env._length))

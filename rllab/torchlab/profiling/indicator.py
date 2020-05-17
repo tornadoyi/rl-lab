@@ -1,79 +1,155 @@
-import abc
 from collections import OrderedDict
 import numpy as np
 import torch
+from . import condition
 
 
-class Indicator(abc.ABC):
-    def __init__(self, name=''):
-        self._name = name
+
+__INDICATORS = {}
+
+def register(name):
+    global __INDICATORS
+    def _thunk(func):
+        __INDICATORS[name] = func
+        return func
+    return _thunk
+
+
+def create(type, name=None):
+    if type not in __INDICATORS: raise Exception('Unknown indicator type {}'.format(type))
+    return __INDICATORS[type]().name(name)
+
+
+
+class Indicator(object):
+    def __init__(self):
+        self._name = None
+        self._profiling = None
+        self._conditions = []
+        self._updates = 0
+        self._reset()
 
     @property
-    def name(self): return self._name
+    def updates(self): return self._updates
 
-    @abc.abstractmethod
-    def __call__(self, type=None): pass
+    def __call__(self): pass
 
-    @abc.abstractmethod
-    def append(self, *args, **kwargs): pass
+    def name(self, name):
+        self._name = name
+        return self
 
-    @abc.abstractmethod
-    def flush(self, writer, steps, *args, **kwargs): pass
+    def profiling(self, profiling):
+        self._profiling = profiling
+        return self
+
+    def cond(self, t, *args, **kwargs):
+        c = condition.create(t, *args, **kwargs)
+        c.indicator = self
+        self._conditions.append(c)
+        return self
+
+    def update(self, v, signals=(), **kwargs):
+        self._updates += 1
+        self._update(v, signals=signals, **kwargs)
+        for c in self._conditions:
+            if not c(signals): continue
+            self._save()
+            break
+
+    def save(self):
+        self._save()
+        self._reset()
+
+    def _write(self, fname, *args, **kwargs): getattr(self._profiling.writer, fname)(self._name, *args, global_step=self._profiling.steps, **kwargs)
+
+    def _update(self, *args, **kwargs): raise NotImplementedError('_update is not implemented')
+
+    def _save(self): raise NotImplementedError('_save is not implemented')
+
+    def _reset(self): raise NotImplementedError('_reset is not implemented')
 
 
-
+@register('scalar')
 class Scalar(Indicator):
-    def __init__(self, *args, **kwargs):
-        super(Scalar, self).__init__(*args, **kwargs)
-        self._values = []
-        self._vfunc = {
-            None: lambda: self._values,
-            'min': lambda: np.min(self._values),
-            'max': lambda: np.max(self._values),
-            'mean': lambda: np.mean(self._values),
-        }
+    def __init__(self):
+        self._vfunc = _vfunc('mean')
+        self._walltime = None
+        super(Scalar, self).__init__()
 
-    def __call__(self, type=None): return self._vfunc[type]()
+    def __call__(self): return self._vfunc(self._values)
 
-    def append(self, v):
+    def vtype(self, type):
+        self._vfunc = _vfunc(type)
+        return self
+
+    def walltime(self, walltime):
+        self._walltime = walltime
+        return self
+
+    def _reset(self): self._values = []
+
+    def _update(self, v, **kwargs):
         self._values.append(_scalar(v))
 
-    def flush(self, writer, steps, type='mean', walltime=None, **kwargs):
-        writer.add_scalar(self.name, self(type), steps, walltime=walltime)
+    def _save(self):
+        self._write('add_scalar', self(), walltime=self._walltime)
 
 
+@register('scalars')
 class Scalars(Indicator):
-    def __init__(self, *args, **kwargs):
-        super(Scalars, self).__init__(*args, **kwargs)
-        self._scalars = OrderedDict()
+    def __init__(self):
+        self._scalars = {}
+        self._walltime = None
+        super(Scalars, self).__init__()
 
-    def __call__(self, type=None):
-        d = OrderedDict()
-        for n, s in self._scalars.items():
-            d[n] = s(type)
-        return d
+    def __call__(self): return dict([(n, s()) for n, s in self._scalars.items()])
 
+    def profiling(self, profiling):
+        super(Scalars, self).profiling(profiling)
+        for _, s in self._scalars.items(): s.profiling(profiling)
+        return self
 
-    def append(self, vdict):
+    def walltime(self, walltime):
+        self._walltime = walltime
+        return self
+
+    def scalar(self, name):
+        s = create('scalar', name)
+        self._scalars[name] = s
+        return self
+
+    def _reset(self):
+        for _, s in self._scalars.items(): s._reset()
+
+    def _update(self, vdict, *args, **kwargs):
         for k, v in vdict.items():
-            if k not in self._scalars: s = Scalar(k)
-            else: s = self._scalars[k]
-            s.append(v)
+            s = self._scalars[k]
+            s.update(v, *args, **kwargs)
 
-    def flush(self, writer, steps, type='mean', walltime=None, **kwargs):
-        d = dict([(n, s(type)) for n, s in self._scalars.items()])
-        writer.add_scalars(self.name, d, steps, walltime=walltime)
+    def _save(self):
+        self._write('add_scalars', self(), walltime=self._walltime)
 
 
-
+@register('histogram')
 class Histogram(Scalar):
+    def __init__(self):
+        super(Histogram, self).__init__()
+        self._bins = 'tensorflow'
+        self._max_bins = None
+        self._vfunc = _vfunc(None)
 
-    def __call__(self, *args, **kwargs): return self._vfunc[None]()
+    def vtype(self, type): raise Exception('can not set vtype for histogram')
 
-    def flush(self, writer, steps, bins='tensorflow', max_bins=None, walltime=None, **kwargs):
-        writer.add_histogram(self.name, self(), steps, bins=bins, max_bins=max_bins, walltime=walltime)
+    def bins(self, bins):
+        self._bins = bins
+        return self
 
+    def max_bins(self, max_bins):
+        self._max_bins = max_bins
+        return self
 
+    def _save(self):
+        self._write('add_histogram', self(), bins=self._bins, max_bins=self._max_bins, walltime=self._walltime)
 
 
 
@@ -81,7 +157,7 @@ class Histogram(Scalar):
 def _scalar(v):
     if isinstance(v, torch.Tensor):
         v = v.data.numpy()
-    elif isinstance(v, np.ndarray):
+    elif isinstance(v, (np.ndarray, float, int)):
         pass
     else:
         raise Exception('Invalid indicator type {}'.format(type(v)))
@@ -89,3 +165,13 @@ def _scalar(v):
     return v
 
 
+def _vfunc(t):
+    d = {
+        None: lambda x: x,
+        'min': lambda x: np.min(x),
+        'max': lambda x: np.max(x),
+        'mean': lambda x: np.mean(x),
+        'sum': lambda x: np.sum(x),
+    }
+    if t not in d: raise Exception('invalid value type {}'.format(t))
+    return d[t]

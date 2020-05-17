@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import torch
 from torch import nn
 from rllab.rl import features
@@ -29,7 +30,8 @@ class QFunc(nn.Module):
             if layer_norm: l.append(nn.LayerNorm([in_features]))
             l.append(nn.ReLU())
         l.append(nn.Linear(in_features, ac_space.n))
-        self.net_action_score = nn.Sequential(*l)
+        layers = [('{}_{}'.format(l[i].__class__.__name__.lower(), i), l[i]) for i in range(len(l))]
+        self.net_action_score = nn.Sequential(OrderedDict(layers))
 
         # dueling
         if dueling:
@@ -41,7 +43,8 @@ class QFunc(nn.Module):
                 if layer_norm: l.append(nn.LayerNorm([in_features]))
                 l.append(nn.ReLU())
             l.append(nn.Linear(in_features, 1))
-            self.net_state_score = nn.Sequential(*l)
+            layers = [('{}_{}'.format(l[i].__class__.__name__.lower(), i), l[i]) for i in range(len(l))]
+            self.net_state_score = nn.Sequential(OrderedDict(layers))
 
 
     def forward(self, ob):

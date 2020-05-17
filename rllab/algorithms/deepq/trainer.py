@@ -1,8 +1,10 @@
 from rllab.torchlab import optim
 from rllab import envs
+from rllab.rl.profiling import Profiling
 from rllab.rl.common.schedule import LinearSchedule
 from . import replay_buffer
 from .deepq import DeepQ
+
 
 class Trainer(object):
     def __init__(
@@ -11,11 +13,12 @@ class Trainer(object):
             alg={},
             rb={},
             explore={},
-            optimizer={'name': 'Adam', 'lr': 1e-3},
+            optimizer={},
             total_steps=100000,
             learning_starts=1000,
             train_freq=1,
             target_network_update_freq=500,
+            profiling={},
             batch_size=32,
             **_,
     ):
@@ -37,7 +40,8 @@ class Trainer(object):
         )
 
         # optimizer
-        self.optimizer = optim.build(params=self.deepq.parameters, **optimizer)
+        opt = dict({'name':'Adam', 'lr':1e-3}, **optimizer)
+        self.optimizer = optim.build(params=self.deepq.parameters, **opt)
 
         # replay buffer
         self.replay_buffer = replay_buffer.build(**rb)
@@ -49,14 +53,21 @@ class Trainer(object):
             final_p=explore.get('final', 0.02)
         )
 
+        # steps
+        self.steps = 0
 
+        # profiling
+        self.profiling = Profiling(self.env, step_func=lambda: self.steps, **dict({'flush_freq': 1, 'print_freq': 1}, **profiling))
 
 
     def __call__(self, *args, **kwargs):
         ob = self.env.reset()
-        for t in range(self.total_steps):
+        while self.steps < self.total_steps:
+            self.steps += 1
+            # self.env.render()
+
             # evaluate action
-            eps = self.exploration.value(t)
+            eps = self.exploration.value(self.steps)
             action = self.deepq.act(ob, eps)
 
             # exec action
@@ -65,15 +76,31 @@ class Trainer(object):
             # store transition in the replay buffer.
             self.replay_buffer.add(ob, action, rew, ob_n, float(done))
 
+            # train once
+            learn_info = None
+            if self.steps > self.learning_starts and self.steps % self.train_freq == 0:
+                obs, acs, rews, obs_n, dones = self.replay_buffer.sample(self.batch_size)
+                learn_info = self.deepq.learn(self.optimizer, obs, acs, rews, obs_n, dones)
+
+            # update target network
+            if self.steps > self.learning_starts and self.steps % self.target_network_update_freq == 0:
+                self.deepq.update_target_network()
+
+            # profiling
+            self.profile(learn_info)
+
             # next
             ob = ob_n
             if done: ob = self.env.reset()
 
-            #  train once
-            if t > self.learning_starts and t % self.train_freq == 0:
-                obs, acs, rews, obs_n, dones = self.replay_buffer.sample(self.batch_size)
-                self.deepq.learn(self.optimizer, obs, acs, rews, obs_n, dones)
 
-            # update target network
-            if t > self.learning_starts and t % self.target_network_update_freq == 0:
-                self.deepq.update_target_network()
+    def profile(self, learn_info):
+        p = self.profiling
+
+        # profile learn info
+        learn_info = learn_info or {}
+        for k, (v, creator) in learn_info.items():
+            p.update(k, v, creator=creator)
+
+        # step for profiling
+        p()

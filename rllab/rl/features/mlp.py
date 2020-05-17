@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import numpy as np
 from torch import nn
 from .features import register
@@ -25,6 +26,7 @@ class MLP(nn.Sequential):
         for d in input_shape[1:]: in_features *= d
 
         l = [nn.Flatten()]
+
         for i in range(num_layers):
             # fc
             x = nn.Linear(in_features, num_hidden)
@@ -39,4 +41,5 @@ class MLP(nn.Sequential):
             # activation
             l.append(nn.Tanh() if activation is None else activation)
 
-        super(MLP, self).__init__(*l)
+        layers = [('{}_{}'.format(l[i].__class__.__name__.lower(), i), l[i]) for i in range(len(l))]
+        super(MLP, self).__init__(OrderedDict(layers))
