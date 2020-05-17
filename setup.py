@@ -24,6 +24,7 @@ setup(name=NAME,
       install_requires = [
             'argparse',
             'easydict',
+            'gym'
       ],
       entry_points={
             'console_scripts': [
