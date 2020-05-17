@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 NAME = 'rl-lab'
 
 # Define version information
-with open(join(dirname(__file__), NAME + '/VERSION'), 'rb') as f:
+with open(join(dirname(__file__),  'rllab/VERSION'), 'rb') as f:
       VERSION = f.read().decode('ascii').strip()
 
 
