@@ -1,4 +1,5 @@
 import sys
+import os
 from rllab import cli
 from rllab import define
 
@@ -18,5 +19,5 @@ if __name__ == '__main__':
         ]
     else: raise Exception('Invalid command {}'.format(cmd))
 
-    sys.argv = [sys.argv[0], define.which_module(), cmd] + argv + extras
+    sys.argv = [sys.argv[0], define.module(os.path.realpath(__file__)), cmd] + argv + extras
     cli.main()

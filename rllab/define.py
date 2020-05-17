@@ -51,22 +51,25 @@ def which_module():
     global _MODULE_NAME
     if _MODULE_NAME is not None: return _MODULE_NAME
 
-    __MODULE_MATCH_HEADER = os.path.join('rllab', 'algorithms', '').replace('\\', '/')
     stacks = traceback.extract_stack()
     if len(stacks) < 2: raise Exception('can not get module from stack {}'.format(stacks))
     for i in range(len(stacks)-2, -1 ,-1):
         f = stacks[i].filename
-        index = f.rfind(__MODULE_MATCH_HEADER)
-        if index < 0: continue
-        st = index + len(__MODULE_MATCH_HEADER)
-        ed = f.find('/', st)
-        if ed < 0: continue
-
-        _MODULE_NAME = f[st:ed]
-        return _MODULE_NAME
+        try:
+            return module(f)
+        except: continue
 
     raise Exception('can not get module from stack {}'.format(stacks))
 
+
+def module(f):
+    __MODULE_MATCH_HEADER = os.path.join('rllab', 'algorithms', '').replace('\\', '/')
+    index = f.rfind(__MODULE_MATCH_HEADER)
+    if index < 0: raise Exception('Can not get module from file {}'.format(f))
+    st = index + len(__MODULE_MATCH_HEADER)
+    ed = f.find('/', st)
+    if ed < 0: raise Exception('Can not get module from file {}'.format(f))
+    return f[st:ed]
 
 
 
