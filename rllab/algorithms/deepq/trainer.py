@@ -49,7 +49,7 @@ class Trainer(object):
         # create the schedule for exploration starting from 1.
         self.exploration = LinearSchedule(
             schedule_timesteps=int(explore.get('fraction', 0.1) * total_steps),
-            initial_p=explore.get('init', 0.1),
+            initial_p=explore.get('init', 1.0),
             final_p=explore.get('final', 0.02)
         )
 
