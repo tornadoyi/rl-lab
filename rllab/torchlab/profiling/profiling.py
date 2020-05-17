@@ -40,5 +40,5 @@ class Profiling(object):
         id = self._indicators.get(tag, None)
         if id is None:
             if creator is None: raise Exception('can not find indicator {}'.format(tag))
-            id = creator().name(tag).profiling(self)
+            id = self._indicators[tag] = creator().name(tag).profiling(self)
         id.update(value, signals)
