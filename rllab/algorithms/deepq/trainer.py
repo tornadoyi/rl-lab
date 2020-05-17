@@ -1,6 +1,6 @@
 from rllab.torchlab import optim
 from rllab import envs
-from rllab.rl.profiling import Profiling
+from rllab.rl.profiling import Profiling, indicator
 from rllab.rl.common.schedule import LinearSchedule
 from . import replay_buffer
 from .deepq import DeepQ
@@ -14,7 +14,7 @@ class Trainer(object):
             rb={},
             explore={},
             optimizer={},
-            total_steps=100000,
+            total_steps=int(1e6),
             learning_starts=1000,
             train_freq=1,
             target_network_update_freq=500,
@@ -57,7 +57,7 @@ class Trainer(object):
         self.steps = 0
 
         # profiling
-        self.profiling = Profiling(self.env, step_func=lambda: self.steps, **dict({'flush_freq': 1, 'print_freq': 1}, **profiling))
+        self.profiling = Profiling(self.env, step_func=lambda: self.steps, **profiling)
 
 
     def __call__(self, *args, **kwargs):
@@ -87,15 +87,20 @@ class Trainer(object):
                 self.deepq.update_target_network()
 
             # profiling
-            self.profile(learn_info)
+            self.profile({'explore_epsilon': eps}, learn_info)
 
             # next
             ob = ob_n
             if done: ob = self.env.reset()
 
 
-    def profile(self, learn_info):
+    def profile(self, hps, learn_info):
         p = self.profiling
+
+        # hyper parameters
+        for k, v in hps.items():
+            p.update('hp/{}'.format(k), v, creator=lambda: indicator('scalar').cond('update', 100))
+
 
         # profile learn info
         learn_info = learn_info or {}
