@@ -53,7 +53,7 @@ class Indicator(object):
         self._update(v, signals=signals, **kwargs)
         for c in self._conditions:
             if not c(signals): continue
-            self._save()
+            self.save()
             break
 
     def save(self):
