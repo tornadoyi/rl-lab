@@ -9,7 +9,7 @@ if __name__ == '__main__':
         argv = [
             'env.id="CartPole-v0"',
             'total_steps=int(1e5)',
-            'optimizer={"name":"Adam","lr":1e-3}',
+            'optimizer.lr=1e-3',
             'rb.size=50000',
             'explore.fraction=0.1', 'explore.final=0.02',
         ]
