@@ -64,6 +64,7 @@ def which_module():
 
 def module(f):
     __MODULE_MATCH_HEADER = os.path.join('rllab', 'algorithms', '').replace('\\', '/')
+    f = f.replace('\\', '/')
     index = f.rfind(__MODULE_MATCH_HEADER)
     if index < 0: raise Exception('Can not get module from file {}'.format(f))
     st = index + len(__MODULE_MATCH_HEADER)
