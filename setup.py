@@ -24,7 +24,9 @@ setup(name=NAME,
       install_requires = [
             'argparse',
             'easydict',
-            'gym'
+            'gym',
+            'opencv-python',
+            'pyhumps',
       ],
       entry_points={
             'console_scripts': [

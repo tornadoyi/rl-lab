@@ -1,8 +1,6 @@
+import gym
 
-
-from .wrapper import Wrapper
-
-class Profiling(Wrapper):
+class Profiling(gym.Wrapper):
     def __init__(self, *args, **kwargs):
         super(Profiling, self).__init__(*args, **kwargs)
         self.unwrapped.num_resets = 0

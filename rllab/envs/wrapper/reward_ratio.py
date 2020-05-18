@@ -1,9 +1,9 @@
 
 
 
-from .wrapper import Wrapper
+import gym
 
-class RewardRatio(Wrapper):
+class RewardRatio(gym.Wrapper):
 
     def step(self, action):
         ob, r, d, info = super(RewardRatio, self).step(action)

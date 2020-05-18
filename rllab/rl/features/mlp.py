@@ -11,6 +11,7 @@ class MLP(nn.Sequential):
         Stack of fully-connected layers to be used in a policy / q-function approximator
         Parameters:
         ----------
+        input_shape: tuple              should be a shape with format (batch, feature length)
         num_layers: int                 number of fully-connected layers (default: 2)
         num_hidden: int                 size of fully-connected layers (default: 64)
         activation:                     activation function (default: tf.tanh)
