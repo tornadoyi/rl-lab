@@ -13,7 +13,6 @@ def _create_module_class(name, func):
         name,
         (nn.Module, ),
         {
-            "counter": 0,
             "__init__": __init__,
             "forward": lambda self, x: func(x, *self.args, **self.kwargs)
         }
@@ -25,5 +24,4 @@ for name in dir(torch.Tensor):
     if not ismethoddescriptor(f): continue
     name = humps.pascalize(name)
     globals()[name] = _create_module_class(name, f)
-
 

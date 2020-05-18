@@ -5,7 +5,7 @@ from .features import register
 
 
 @register("mlp")
-class MLP(nn.Sequential):
+class mlp(nn.Sequential):
     def __init__(self, input_shape, num_layers=2, num_hidden=64, activation=None, layer_norm=False):
         """
         Stack of fully-connected layers to be used in a policy / q-function approximator
@@ -43,4 +43,4 @@ class MLP(nn.Sequential):
             l.append(nn.Tanh() if activation is None else activation)
 
         layers = [('{}_{}'.format(l[i].__class__.__name__.lower(), i), l[i]) for i in range(len(l))]
-        super(MLP, self).__init__(OrderedDict(layers))
+        super(mlp, self).__init__(OrderedDict(layers))

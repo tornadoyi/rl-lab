@@ -20,5 +20,7 @@ def build(ob_space, name=None, **feature_kwargs):
     if not isinstance(ob_space, Box): raise Exception('Invalid ob space {}'.format(ob_space))
     if len(ob_space.shape) == 1:
         return __FEATURES['mlp'](input_shape, **feature_kwargs)
+    elif len(ob_space.shape) == 3:
+        return __FEATURES['conv_only'](input_shape, **feature_kwargs)
     else:
         raise Exception('Unsupported shape of ob space {}'.format(input_shape))

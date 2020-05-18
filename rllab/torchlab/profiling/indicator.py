@@ -156,7 +156,7 @@ class Histogram(Scalar):
 
 def _scalar(v):
     if isinstance(v, torch.Tensor):
-        v = v.data.numpy()
+        v = v.cpu().data.numpy()
     elif isinstance(v, (np.ndarray, float, int)):
         pass
     else:

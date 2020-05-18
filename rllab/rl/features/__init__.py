@@ -1,5 +1,5 @@
 
 from .features import *
-from . import mlp
+from . import mlp, cnn
 
 

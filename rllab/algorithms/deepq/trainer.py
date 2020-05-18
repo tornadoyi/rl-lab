@@ -1,3 +1,5 @@
+import torch
+from rllab import torchlab as tl
 from rllab.torchlab import optim
 from rllab import envs
 from rllab.rl.profiling import Profiling, indicator
@@ -20,6 +22,7 @@ class Trainer(object):
             target_network_update_freq=500,
             profiling={},
             batch_size=32,
+            device=None,
             **_,
     ):
         # arguments
@@ -29,6 +32,9 @@ class Trainer(object):
         self.batch_size = batch_size
         self.target_network_update_freq = target_network_update_freq
 
+        # get device
+        self.device = tl.select_device(device)
+
         # env
         self.env = envs.make(**env)
 
@@ -37,11 +43,11 @@ class Trainer(object):
             self.env.observation_space,
             self.env.action_space,
             **alg
-        )
+        ).to(device)
 
         # optimizer
         opt = dict({'name':'Adam', 'lr':1e-3}, **optimizer)
-        self.optimizer = optim.build(params=self.deepq.parameters, **opt)
+        self.optimizer = optim.build(params=self.deepq.trained_parameters, **opt)
 
         # replay buffer
         self.replay_buffer = replay_buffer.build(**rb)
@@ -68,7 +74,10 @@ class Trainer(object):
 
             # evaluate action
             eps = self.exploration.value(self.steps)
-            action = self.deepq.act(ob, eps)
+            action = self.deepq.act(
+                torch.as_tensor(ob, dtype=torch.float32, device=self.device),
+                eps
+            )
 
             # exec action
             ob_n, rew, done, _ = self.env.step(action)
@@ -80,7 +89,15 @@ class Trainer(object):
             learn_info = None
             if self.steps > self.learning_starts and self.steps % self.train_freq == 0:
                 obs, acs, rews, obs_n, dones = self.replay_buffer.sample(self.batch_size)
-                learn_info = self.deepq.learn(self.optimizer, obs, acs, rews, obs_n, dones)
+                learn_info = self.deepq.learn(
+                    self.optimizer,
+                    torch.as_tensor(obs, dtype=torch.float32, device=self.device),
+                    torch.as_tensor(acs, dtype=torch.long, device=self.device),
+                    torch.as_tensor(rews, dtype=torch.float32, device=self.device),
+                    torch.as_tensor(obs_n, dtype=torch.float32, device=self.device),
+                    torch.as_tensor(dones, dtype=torch.float32, device=self.device),
+                    torch.as_tensor([1.0] * obs.shape[0], dtype=torch.float32, device=self.device),
+                )
 
             # update target network
             if self.steps > self.learning_starts and self.steps % self.target_network_update_freq == 0:

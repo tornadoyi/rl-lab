@@ -9,7 +9,7 @@ def select_device(name=None, cuda_first=True, gpu_field='memory.free', field_sor
     if name == 'cpu': return torch.device('cpu')
 
     # cuda
-    if name[:4] == 'cuda':
+    if name is not None and name[:4] == 'cuda':
         # check cuda
         if not torch.cuda.is_available(): raise Exception('cuda is not available')
 

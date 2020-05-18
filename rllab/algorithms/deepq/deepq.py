@@ -5,7 +5,7 @@ from rllab.rl.profiling import indicator
 from .network import QFunc
 
 
-class DeepQ(object):
+class DeepQ(nn.Module):
     def __init__(
             self,
             ob_space,
@@ -16,6 +16,8 @@ class DeepQ(object):
             qfunc={},
             **_,
     ):
+        super(DeepQ, self).__init__()
+
         # config
         self.ob_space = ob_space
         self.ac_space = ac_space
@@ -25,15 +27,15 @@ class DeepQ(object):
 
         # q function
         self.net_q_eval = QFunc(ob_space, ac_space, **qfunc)
-        self.net_q_target = QFunc(ob_space, ac_space, **qfunc)
+        self.net_q_target = QFunc(ob_space, ac_space,  **qfunc)
 
 
     @property
-    def parameters(self): return self.net_q_eval.parameters()
+    def trained_parameters(self): return self.net_q_eval.parameters()
 
 
     def act(self, ob, eps):
-        obs = torch.as_tensor(ob, dtype=torch.float32).reshape(*[(-1, ) + self.ob_space.shape])
+        obs = ob.reshape(*[(-1, ) + self.ob_space.shape])
 
         # todo noise action
         deterministic_actions = torch.argmax(self.net_q_eval(obs), 1)
@@ -44,14 +46,6 @@ class DeepQ(object):
 
 
     def learn(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
-        # convert to tensor
-        obs = torch.as_tensor(obs, dtype=torch.float32)
-        acs = torch.as_tensor(acs, dtype=torch.long)
-        rews = torch.as_tensor(rews, dtype=torch.float32)
-        obs_n = torch.as_tensor(obs_n, dtype=torch.float32)
-        dones = torch.as_tensor(dones, dtype=torch.float32)
-        weights = torch.as_tensor(weights or [1.0]*obs.shape[0], dtype=torch.float32)
-
         # calculate q evaluation
         q_eval = self.net_q_eval(obs)
 
