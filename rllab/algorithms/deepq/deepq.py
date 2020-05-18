@@ -55,9 +55,8 @@ class DeepQ(object):
         # calculate q evaluation
         q_eval = self.net_q_eval(obs)
 
-        # calculate q target
-        with torch.no_grad():
-            q_target = self.net_q_target(obs_n)
+        # calculate q target and stop gradients
+        q_target = self.net_q_target(obs_n).detach()
 
         # q scores for actions which we know were selected in the given state.
         q_eval_selected = torch.sum(q_eval * F.one_hot(acs, self.ac_space.n), 1)
