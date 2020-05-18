@@ -77,7 +77,7 @@ class Trainer(object):
             action = self.deepq.act(
                 torch.as_tensor(ob, dtype=torch.float32, device=self.device),
                 eps
-            )
+            ).cpu().data.numpy()
 
             # exec action
             ob_n, rew, done, _ = self.env.step(action)

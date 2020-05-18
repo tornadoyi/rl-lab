@@ -42,7 +42,7 @@ class DeepQ(nn.Module):
         random_actions = deterministic_actions.float().uniform_(0.0, float(self.ac_space.n)).long()
         conditions = deterministic_actions.float().uniform_(0, 1) < eps
         final_actions = torch.where(conditions, random_actions, deterministic_actions)
-        return final_actions.squeeze().data.numpy()
+        return final_actions.squeeze()
 
 
     def learn(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
