@@ -43,7 +43,7 @@ class Trainer(object):
             self.env.observation_space,
             self.env.action_space,
             **alg
-        ).to(device)
+        ).to(self.device)
 
         # optimizer
         opt = dict({'name':'Adam', 'lr':1e-3}, **optimizer)
