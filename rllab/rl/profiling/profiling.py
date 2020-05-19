@@ -11,10 +11,10 @@ class Profiling(profiling.Profiling):
 
     def __call__(self, *args, **kwargs):
         ud = self.env.userdata
-        if ud.reward:
+        if ud.reward is not None:
             self.update('env/mean_reward_100s', ud.reward, creator=lambda: indicator('scalar').cond('update', 100))
 
-        if ud.done:
+        if ud.done == True:
             self.update('env/round_steps', ud.steps, creator=lambda: indicator('scalar').cond('signal', 'done'))
             self.update('env/round_reward',ud.total_reward, creator=lambda: indicator('scalar').cond('signal', 'done'))
 
