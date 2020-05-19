@@ -132,3 +132,10 @@ class Trainer(object):
 
         # step for profiling
         p()
+
+
+
+def train(dist=None, device=None, **kwargs):
+    if dist is None: return Trainer(device=device, **kwargs)()
+
+    #
