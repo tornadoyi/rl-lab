@@ -10,6 +10,7 @@ class DeepQ(nn.Module):
             self,
             ob_space,
             ac_space,
+            feature_creator,
             double_q=False,
             grad_norm_clipping=None,
             gamma=1.0,
@@ -26,8 +27,8 @@ class DeepQ(nn.Module):
         self.grad_norm_clipping = grad_norm_clipping
 
         # q function
-        self.net_q_eval = QFunc(ob_space, ac_space, **qfunc)
-        self.net_q_target = QFunc(ob_space, ac_space,  **qfunc)
+        self.net_q_eval = QFunc(ac_space, feature_creator, **qfunc)
+        self.net_q_target = QFunc(ac_space, feature_creator,  **qfunc)
 
 
     @property

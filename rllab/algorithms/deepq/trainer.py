@@ -2,6 +2,7 @@ import torch
 from rllab import torchlab as tl
 from rllab.torchlab import optim
 from rllab import envs
+from rllab.rl import features
 from rllab.rl.profiling import Profiling, indicator
 from rllab.rl.common.schedule import LinearSchedule
 from . import replay_buffer
@@ -16,6 +17,7 @@ class Trainer(object):
             rb={},
             explore={},
             optimizer={},
+            feature={},
             total_steps=int(1e6),
             learning_starts=1000,
             train_freq=1,
@@ -38,10 +40,14 @@ class Trainer(object):
         # env
         self.env = envs.make(**env)
 
+        # features
+        feature_creator = lambda: features.build(self.env.observation_space, **feature)
+
         # algorithm
         self.deepq = DeepQ(
             self.env.observation_space,
             self.env.action_space,
+            feature_creator,
             **deepq
         ).to(self.device)
 

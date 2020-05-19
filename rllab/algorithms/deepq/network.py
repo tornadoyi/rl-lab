@@ -1,17 +1,16 @@
 from collections import OrderedDict
 import torch
 from torch import nn
-from rllab.rl import features
+
 
 class QFunc(nn.Module):
     def __init__(
             self,
-            ob_space,
             ac_space,
+            feature_creator,
             hiddens=(256, ),
             dueling=True,
             layer_norm=False,
-            feature={},
             **_,
     ):
         super(QFunc, self).__init__()
@@ -19,7 +18,7 @@ class QFunc(nn.Module):
         self.dueling = dueling
 
         # create feature extractor
-        self.net_features = features.build(ob_space, **feature)
+        self.net_features = feature_creator()
 
         # create action score network
         l = []
