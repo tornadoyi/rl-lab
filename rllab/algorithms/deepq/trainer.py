@@ -12,7 +12,7 @@ class Trainer(object):
     def __init__(
             self,
             env,
-            alg={},
+            deepq={},
             rb={},
             explore={},
             optimizer={},
@@ -42,7 +42,7 @@ class Trainer(object):
         self.deepq = DeepQ(
             self.env.observation_space,
             self.env.action_space,
-            **alg
+            **deepq
         ).to(self.device)
 
         # optimizer
