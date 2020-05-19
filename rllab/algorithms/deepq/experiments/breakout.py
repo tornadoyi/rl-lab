@@ -12,6 +12,7 @@ if __name__ == '__main__':
             'optimizer={"name":"Adam","lr":1e-3}',
             'rb.size=50000',
             'explore.fraction=0.1', 'explore.final=0.02',
+            'device="cpu"',
         ]
     elif cmd == 'play':
         argv = [

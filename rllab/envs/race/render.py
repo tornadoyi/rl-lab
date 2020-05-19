@@ -32,15 +32,16 @@ class Render(render.Render):
 
         # episodes
         infos = []
-        if hasattr(self._env, 'steps'):
+        ud = self._env.userdata
+        if 'steps' in ud:
             if self._env.spec.max_episode_steps is not None:
-                infos.append('episodes: {}/{}'.format(self._env.steps, self._env.spec.max_episode_steps))
+                infos.append('episodes: {}/{}'.format(ud.steps, self._env.spec.max_episode_steps))
             else:
-                infos.append('episodes: {}'.format(self._env.steps))
+                infos.append('episodes: {}'.format(ud.steps))
 
         # reward
-        if hasattr(self._env, 'total_reward'):
-            infos.append('rewards: {}'.format(self._env.total_reward))
+        if 'total_reward' in ud:
+            infos.append('rewards: {}'.format(ud.total_reward))
 
         # location
         infos.append('location: {}/{}'.format(self._env._pos + 1, self._env._length))

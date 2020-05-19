@@ -23,7 +23,10 @@ class QFunc(nn.Module):
 
         # create action score network
         l = []
-        in_features = self.net_features.output_shape[1]
+        in_features = 1
+        for d in self.net_features.output_shape[1:]: in_features *= d
+        l.append(nn.Flatten())
+
         for hidden in list(hiddens):
             l.append(nn.Linear(in_features, hidden))
             in_features = hidden
@@ -36,7 +39,10 @@ class QFunc(nn.Module):
         # dueling
         if dueling:
             l = []
-            in_features = self.net_features.output_shape[1]
+            in_features = 1
+            for d in self.net_features.output_shape[1:]: in_features *= d
+            l.append(nn.Flatten())
+
             for hidden in list(hiddens):
                 l.append(nn.Linear(in_features, hidden))
                 in_features = hidden

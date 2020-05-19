@@ -10,17 +10,18 @@ class Profiling(profiling.Profiling):
 
 
     def __call__(self, *args, **kwargs):
-        if self.env.reward:
-            self.update('env/mean_reward_100s', self.env.reward, creator=lambda: indicator('scalar').cond('update', 100))
+        ud = self.env.userdata
+        if ud.reward:
+            self.update('env/mean_reward_100s', ud.reward, creator=lambda: indicator('scalar').cond('update', 100))
 
-        if self.env.done:
-            self.update('env/round_steps', self.env.steps, creator=lambda: indicator('scalar').cond('signal', 'done'))
-            self.update('env/round_reward', self.env.total_reward, creator=lambda: indicator('scalar').cond('signal', 'done'))
+        if ud.done:
+            self.update('env/round_steps', ud.steps, creator=lambda: indicator('scalar').cond('signal', 'done'))
+            self.update('env/round_reward',ud.total_reward, creator=lambda: indicator('scalar').cond('signal', 'done'))
 
 
     def update(self, tag, value, signals=(), creator=None):
         signals = set(signals)
-        if self.env.done: signals.add('done')
+        if self.env.userdata.done: signals.add('done')
         super(Profiling, self).update(tag, value, signals, creator)
 
 
