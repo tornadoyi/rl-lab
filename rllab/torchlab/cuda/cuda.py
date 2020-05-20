@@ -1,3 +1,4 @@
+import os
 import subprocess
 from easydict import EasyDict as edict
 
@@ -31,6 +32,12 @@ def query_gpu(*fileds, tree_format=False):
                 s[f] = t
 
         status.append(s)
+
+    # mapping
+    if 'CUDA_VISIBLE_DEVICES' in os.environ:
+        vis_status = [status[int(id)] for id in os.environ['CUDA_VISIBLE_DEVICES'].split(',')]
+        status = vis_status
+
     return status
 
 
