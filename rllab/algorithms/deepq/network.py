@@ -1,6 +1,6 @@
 from collections import OrderedDict
-import torch
-from torch import nn
+from rllab import torchlab as tl
+from rllab.torchlab import nn
 
 
 class QFunc(nn.Module):
@@ -59,7 +59,7 @@ class QFunc(nn.Module):
         # calculate advantage for dueling network
         if self.dueling:
             self.state_score = self.net_state_score(ob)
-            self.action_scores_mean = torch.mean(self.action_score, 1)
+            self.action_scores_mean = tl.mean(self.action_score, 1)
             self.action_scores_centered = self.action_score  - self.action_scores_mean.unsqueeze(1)
             self.q = self.state_score + self.action_scores_centered
         else:

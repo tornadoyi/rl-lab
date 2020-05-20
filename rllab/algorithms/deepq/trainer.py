@@ -1,4 +1,3 @@
-import torch
 from rllab import torchlab as tl
 from rllab.torchlab import optim, distributed
 from rllab import envs
@@ -81,7 +80,7 @@ class Trainer(object):
             # evaluate action
             eps = self.exploration.value(self.steps)
             action = self.deepq.act(
-                torch.as_tensor(ob, dtype=torch.float32, device=self.device),
+                tl.as_tensor(ob, dtype=tl.float32, device=self.device),
                 eps
             ).cpu().data.numpy()
 
@@ -97,12 +96,12 @@ class Trainer(object):
                 obs, acs, rews, obs_n, dones = self.replay_buffer.sample(self.batch_size)
                 learn_info = self.deepq.learn(
                     self.optimizer,
-                    torch.as_tensor(obs, dtype=torch.float32, device=self.device),
-                    torch.as_tensor(acs, dtype=torch.long, device=self.device),
-                    torch.as_tensor(rews, dtype=torch.float32, device=self.device),
-                    torch.as_tensor(obs_n, dtype=torch.float32, device=self.device),
-                    torch.as_tensor(dones, dtype=torch.float32, device=self.device),
-                    torch.as_tensor([1.0] * obs.shape[0], dtype=torch.float32, device=self.device),
+                    tl.as_tensor(obs, dtype=tl.float32, device=self.device),
+                    tl.as_tensor(acs, dtype=tl.long, device=self.device),
+                    tl.as_tensor(rews, dtype=tl.float32, device=self.device),
+                    tl.as_tensor(obs_n, dtype=tl.float32, device=self.device),
+                    tl.as_tensor(dones, dtype=tl.float32, device=self.device),
+                    tl.as_tensor([1.0] * obs.shape[0], dtype=tl.float32, device=self.device),
                 )
 
             # update target network
@@ -148,7 +147,7 @@ def train(dist=None, device=None, **kwargs):
         dist_device = device
         if device.type == 'gpu':
             index = distributed.get_rank() % tl.cuda.device_count()
-            dist_device = torch.device('gpu:{}'.format(index))
+            dist_device = tl.device('gpu:{}'.format(index))
 
         Trainer(device=dist_device, **kwargs)()
 

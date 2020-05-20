@@ -23,5 +23,6 @@ for name in dir(torch.Tensor):
     f = getattr(torch.Tensor, name)
     if not ismethoddescriptor(f): continue
     name = humps.pascalize(name)
+    if hasattr(nn, name): continue
     globals()[name] = _create_module_class(name, f)
 

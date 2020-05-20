@@ -1,5 +1,5 @@
-import torch
-from torch import nn
+from rllab import torchlab as tl
+from rllab.torchlab import nn
 from rllab.torchlab.nn import functional as F
 from rllab.rl.profiling import indicator
 from .network import QFunc
@@ -39,10 +39,10 @@ class DeepQ(nn.Module):
         obs = ob.reshape(*[(-1, ) + self.ob_space.shape])
 
         # todo noise action
-        deterministic_actions = torch.argmax(self.net_q_eval(obs), 1)
+        deterministic_actions = tl.argmax(self.net_q_eval(obs), 1)
         random_actions = deterministic_actions.float().uniform_(0.0, float(self.ac_space.n)).long()
         conditions = deterministic_actions.float().uniform_(0, 1) < eps
-        final_actions = torch.where(conditions, random_actions, deterministic_actions)
+        final_actions = tl.where(conditions, random_actions, deterministic_actions)
         return final_actions.squeeze()
 
 
@@ -54,13 +54,13 @@ class DeepQ(nn.Module):
         q_target = self.net_q_target(obs_n).detach()
 
         # q scores for actions which we know were selected in the given state.
-        q_eval_selected = torch.sum(q_eval * F.one_hot(acs, self.ac_space.n), 1)
+        q_eval_selected = tl.sum(q_eval * F.one_hot(acs, self.ac_space.n), 1)
 
         # double q
         if self.double_q:
             q_eval_n = self.net_q_eval(obs_n)
-            max_q_ac_n = torch.argmax(q_eval_n, 1)
-            q_best = torch.sum(q_target * F.one_hot(max_q_ac_n, self.ac_space.n), 1)
+            max_q_ac_n = tl.argmax(q_eval_n, 1)
+            q_best = tl.sum(q_target * F.one_hot(max_q_ac_n, self.ac_space.n), 1)
         else:
             q_best = q_target.max(1)[0]
 
@@ -75,7 +75,7 @@ class DeepQ(nn.Module):
 
         # loss
         errors = F.huber_loss(td_error)
-        errors = torch.mean(weights * errors)
+        errors = tl.mean(weights * errors)
 
         # compute gradients (potentially with gradient clipping)
         optimizer.zero_grad()
@@ -87,9 +87,9 @@ class DeepQ(nn.Module):
         # profiling
         indicators = {
             'deepq/loss':                 (errors,                        lambda: indicator('scalar').cond('update')),
-            'deepq/td_error':             (torch.mean(td_error),          lambda: indicator('scalar').cond('update')),
-            'deepq/q_eval_selected':      (torch.mean(q_eval_selected),   lambda: indicator('scalar').cond('update')),
-            'deepq/q_target_selected':    (torch.mean(q_target_selected), lambda: indicator('scalar').cond('update')),
+            'deepq/td_error':             (tl.mean(td_error),          lambda: indicator('scalar').cond('update')),
+            'deepq/q_eval_selected':      (tl.mean(q_eval_selected),   lambda: indicator('scalar').cond('update')),
+            'deepq/q_target_selected':    (tl.mean(q_target_selected), lambda: indicator('scalar').cond('update')),
         }
 
         # gradients profiling
