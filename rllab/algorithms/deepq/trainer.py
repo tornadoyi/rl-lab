@@ -1,6 +1,6 @@
 import torch
 from rllab import torchlab as tl
-from rllab.torchlab import optim
+from rllab.torchlab import optim, distributed
 from rllab import envs
 from rllab.rl import features
 from rllab.rl.profiling import Profiling, indicator
@@ -136,6 +136,20 @@ class Trainer(object):
 
 
 def train(dist=None, device=None, **kwargs):
+    # select device
+    device = tl.select_device(device)
+
+    # single process
     if dist is None: return Trainer(device=device, **kwargs)()
 
-    #
+    # distributed
+    def _dist_trainer():
+        # set device
+        dist_device = device
+        if device.type == 'gpu':
+            index = distributed.get_rank() % tl.cuda.device_count()
+            dist_device = torch.device('gpu:{}'.format(index))
+
+        Trainer(device=dist_device, **kwargs)()
+
+    distributed.launch(target=_dist_trainer, **dist)
