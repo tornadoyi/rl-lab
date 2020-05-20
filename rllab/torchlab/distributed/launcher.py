@@ -1,3 +1,4 @@
+import os
 from torch.multiprocessing import Process
 import torch.distributed as dist
 
@@ -36,6 +37,12 @@ def launch(
         kwargs={},
 ):
     # check
+    if init_method == None or init_method == 'env://':
+        address, port = os.environ.get('MASTER_ADDR', None), os.environ.get('MASTER_PORT', None)
+        if address is None: raise Exception('MASTER_ADDR should be set in environment')
+        if port is None: raise Exception('MASTER_PORT should be set in environment')
+
+    if world_size < 0: world_size = os.environ.get('WORLD_SIZE', -1)
     if world_size < 0: raise Exception('Invalid world size {}'.format(world_size))
     rank_end = rank_end or world_size
     if rank_start <= rank_end: raise Exception('invalid rank range {}'.format(rank_start, rank_end))
@@ -48,6 +55,7 @@ def launch(
         if not dist.is_mpi_available(): raise Exception('backend mpi is not available')
     else:
         raise Exception('invalid backend {}'.format(backend))
+
 
     # launch process
     processes = []

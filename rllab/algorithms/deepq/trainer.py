@@ -32,9 +32,7 @@ class Trainer(object):
         self.train_freq = train_freq
         self.batch_size = batch_size
         self.target_network_update_freq = target_network_update_freq
-
-        # get device
-        self.device = tl.select_device(device)
+        self.device = device
 
         # env
         self.env = envs.make(**env)

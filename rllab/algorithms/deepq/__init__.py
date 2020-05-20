@@ -1,9 +1,9 @@
 
-from .trainer import Trainer
+from .trainer import train
 
 def execute(args):
     if args.command == 'train':
-        Trainer(**args.arguments)()
+        train(**args.arguments)()
     else:
         pass
 
