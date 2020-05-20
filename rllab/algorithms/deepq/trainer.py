@@ -139,14 +139,14 @@ def train(dist=None, device=None, **kwargs):
     # single process
     if dist is None: return Trainer(device=device, **kwargs)()
 
-    # distributed
-    def _dist_trainer():
-        # set device
-        dist_device = device
-        if device.type == 'gpu':
-            index = distributed.get_rank() % tl.cuda.device_count()
-            dist_device = tl.device('gpu:{}'.format(index))
+    distributed.launch(target=dist_trainer, kwargs={'device':device, 'kwargs': kwargs}, **dist)
 
-        Trainer(device=dist_device, **kwargs)()
+# distributed
+def dist_trainer(device, kwargs):
+    # set device
+    dist_device = device
+    if device.type == 'gpu':
+        index = distributed.get_rank() % tl.cuda.device_count()
+        dist_device = tl.device('gpu:{}'.format(index))
 
-    distributed.launch(target=_dist_trainer, **dist)
+    Trainer(device=dist_device, **kwargs)()

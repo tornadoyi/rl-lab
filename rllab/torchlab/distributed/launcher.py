@@ -28,7 +28,7 @@ def launch(
         rank_start=0,
         rank_end=None,
         backend='gloo',
-        init_method=None,
+        method=None,
         timeout=None,
         store=None,
         group_name=None,
@@ -37,7 +37,7 @@ def launch(
         kwargs={},
 ):
     # check
-    if init_method == None or init_method == 'env://':
+    if method == None or method == 'env://':
         address, port = os.environ.get('MASTER_ADDR', None), os.environ.get('MASTER_PORT', None)
         if address is None: raise Exception('MASTER_ADDR should be set in environment')
         if port is None: raise Exception('MASTER_PORT should be set in environment')
@@ -45,10 +45,10 @@ def launch(
     if world_size < 0: world_size = os.environ.get('WORLD_SIZE', -1)
     if world_size < 0: raise Exception('Invalid world size {}'.format(world_size))
     rank_end = rank_end or world_size
-    if rank_start <= rank_end: raise Exception('invalid rank range {}'.format(rank_start, rank_end))
+    if rank_start >= rank_end: raise Exception('invalid rank range {}'.format((rank_start, rank_end)))
     if target is None: raise Exception('invalid target {}'.format(target))
     if backend == 'gloo':
-        if not dist.is_gloo_available(): raise Exception('backend gloo is not available')
+        pass #if not dist.is_gloo_available(): raise Exception('backend gloo is not available')
     elif backend == 'nccl':
         if not dist.is_nccl_available(): raise Exception('backend nccl is not available')
     elif backend == 'mpi':
@@ -63,7 +63,7 @@ def launch(
         p = Process(
             target=_on_process_launch,
             args=(
-                rank, world_size, backend, init_method, timeout, store, group_name,
+                rank, world_size, backend, method, timeout, store, group_name,
                 target, args, kwargs,
             )
         )
