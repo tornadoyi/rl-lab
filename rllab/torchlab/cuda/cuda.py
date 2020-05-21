@@ -1,8 +1,9 @@
 import os
+import sys
 import subprocess
 from easydict import EasyDict as edict
 
-def query_gpu(*fileds, tree_format=False):
+def nvsmi_query(*fileds, tree_format=False):
     # get primitive information
     lines = subprocess.check_output(
         ["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu={}".format(','.join(fileds))]
@@ -41,11 +42,22 @@ def query_gpu(*fileds, tree_format=False):
     return status
 
 
-def sort_gpu(filed, reverse=True):
-    values = [int(s[filed]) for s in query_gpu(filed)]
+def nvsmi_sort(filed, reverse=True):
+    values = [int(s[filed]) for s in nvsmi_query(filed)]
     ids = list(range(len(values)))
     return sorted(ids, key=lambda id: int(values[id]), reverse=reverse)
 
 
-if __name__ == '__main__':
-    print(sort_gpu('memory.free'))
+_CUDA_AVAILABLE = None
+def detect_available():
+    """
+    torch.cuda.is_available() is going to initialize all cuda device. To the disadvantage of multiprocessing,
+    cause an runtime error "Cannot re-initialize CUDA in forked subprocess" would be raised.
+    :return: bool   cuda available
+    """
+    global _CUDA_AVAILABLE
+    if _CUDA_AVAILABLE is not None: return _CUDA_AVAILABLE
+    _CUDA_AVAILABLE = subprocess.check_output(
+        [sys.executable, 'python -c "import torch;print(torch.cuda.is_available())"']
+    ).decode() == 'True'
+    return _CUDA_AVAILABLE
