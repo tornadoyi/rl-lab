@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 from easydict import EasyDict as edict
 from rllab.torchlab.utils import shell
 

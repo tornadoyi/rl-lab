@@ -145,7 +145,7 @@ def train(dist=None, device=None, **kwargs):
 def dist_trainer(device, kwargs):
     # set device
     dist_device = device
-    if device.type == 'gpu':
+    if device.type == 'cuda':
         index = distributed.get_rank() % tl.cuda.device_count()
         dist_device = tl.device('cuda:{}'.format(index))
 
