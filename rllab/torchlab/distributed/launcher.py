@@ -37,6 +37,7 @@ def launch(
         kwargs={},
 ):
     # check
+    if not dist.is_available(): raise Exception('Distributed is not available')
     if method == None or method == 'env://':
         address, port = os.environ.get('MASTER_ADDR', None), os.environ.get('MASTER_PORT', None)
         if address is None: raise Exception('MASTER_ADDR should be set in environment')
@@ -48,7 +49,7 @@ def launch(
     if rank_start >= rank_end: raise Exception('invalid rank range {}'.format((rank_start, rank_end)))
     if target is None: raise Exception('invalid target {}'.format(target))
     if backend == 'gloo':
-        pass #if not dist.is_gloo_available(): raise Exception('backend gloo is not available')
+        if not dist.is_gloo_available(): raise Exception('backend gloo is not available')
     elif backend == 'nccl':
         if not dist.is_nccl_available(): raise Exception('backend nccl is not available')
     elif backend == 'mpi':
