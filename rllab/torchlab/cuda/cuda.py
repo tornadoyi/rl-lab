@@ -59,5 +59,5 @@ def detect_available():
     if _CUDA_AVAILABLE is not None: return _CUDA_AVAILABLE
     _CUDA_AVAILABLE = subprocess.check_output(
         [sys.executable, '-c',  '"import torch;print(torch.cuda.is_available())"']
-    ).decode() == 'True'
+    ).decode().strip('\n') == 'True'
     return _CUDA_AVAILABLE
