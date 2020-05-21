@@ -12,4 +12,4 @@ from . import utils
 
 # export others from torch
 import torch as _torch
-utils.expose(_torch, globals(), filter=lambda k: k.startswith('_'))
+utils.exposer.expose(_torch, globals(), filter=lambda k: k.startswith('_'))

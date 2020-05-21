@@ -2,12 +2,12 @@ import os
 import sys
 import subprocess
 from easydict import EasyDict as edict
+from rllab.torchlab.utils import shell
 
 def nvsmi_query(*fileds, tree_format=False):
     # get primitive information
-    lines = subprocess.check_output(
-        ["nvidia-smi", "--format=csv,noheader,nounits", "--query-gpu={}".format(','.join(fileds))]
-    ).decode().split('\n')[:-1]
+    cmd = 'nvidia-smi --format=csv,noheader,nounits --query-gpu={}'.format(','.join(fileds))
+    lines = shell.run(cmd).split('\n')[:-1]
 
     # parse infos
     status = []
@@ -57,7 +57,5 @@ def detect_available():
     """
     global _CUDA_AVAILABLE
     if _CUDA_AVAILABLE is not None: return _CUDA_AVAILABLE
-    _CUDA_AVAILABLE = subprocess.check_output(
-        [sys.executable, '-c',  '"import torch;print(torch.cuda.is_available())"']
-    ).decode().strip('\n') == 'True'
+    _CUDA_AVAILABLE = shell.run('{} -c "import torch;print(torch.cuda.is_available())"'.format(sys.executable)).strip('\n') == 'True'
     return _CUDA_AVAILABLE
