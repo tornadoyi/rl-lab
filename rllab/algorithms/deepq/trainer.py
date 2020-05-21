@@ -147,6 +147,6 @@ def dist_trainer(device, kwargs):
     dist_device = device
     if device.type == 'gpu':
         index = distributed.get_rank() % tl.cuda.device_count()
-        dist_device = tl.device('gpu:{}'.format(index))
+        dist_device = tl.device('cuda:{}'.format(index))
 
     Trainer(device=dist_device, **kwargs)()
