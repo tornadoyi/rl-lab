@@ -17,26 +17,22 @@ class Optimizer(object):
 
 
 class GradientReducer(Optimizer):
-    def __init__(self, *args, reduce='mean', **kwargs):
-        super(GradientReducer, self).__init__(*args, **kwargs)
+    def __init__(self, optimizer, params=None, reduce='mean'):
+        super(GradientReducer, self).__init__(optimizer, params)
         self._reduce = reduce
         assert reduce in ['mean', 'sum']
 
-
     def step(self, closure=None):
-
         if self._reduce == 'mean': self._reudce_mean()
         elif self._reduce == 'sum': self._reudce_sum()
-
         super(GradientReducer, self).step(closure)
 
     def _reudce_sum(self):
-        for p in self._params:
-            dist.all_reduce(p.grad.data, dist.ReduceOp.SUM)
-
+        handlers = [dist.all_reduce(p.grad.data, dist.ReduceOp.SUM, async_op=True) for p in self._params]
+        for h in handlers: h.wait()
 
     def _reudce_mean(self):
         size = float(dist.get_world_size())
+        self._reudce_sum()
         for p in self._params:
-            dist.all_reduce(p.grad.data, dist.ReduceOp.SUM)
             p.grad.data = p.grad.data / size

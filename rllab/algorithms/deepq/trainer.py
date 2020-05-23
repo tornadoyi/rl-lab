@@ -55,7 +55,6 @@ class Trainer(object):
         self.optimizer = optim.build(params=self.deepq.trained_parameters, **opt)
         if rank >= 0: self.optimizer = distributed.GradientReducer(self.optimizer)
 
-
         # replay buffer
         self.replay_buffer = replay_buffer.build(**rb)
 
@@ -136,7 +135,6 @@ class Trainer(object):
         p()
 
 
-
 def train(dist=None, device=None, **kwargs):
     # select device
     device = tl.select_device(device)
@@ -145,6 +143,7 @@ def train(dist=None, device=None, **kwargs):
     if dist is None: return Trainer(device=device, **kwargs)()
 
     distributed.launch(target=dist_train, kwargs={'device':device, 'kwargs': kwargs}, **dist)
+
 
 # distributed
 def dist_train(device, kwargs):
