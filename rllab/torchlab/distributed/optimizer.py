@@ -9,7 +9,7 @@ class Optimizer(object):
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError("attempted to get missing private attribute '{}'".format(name))
-        return getattr(self.env, name)
+        return getattr(self._optimizer, name)
 
     def step(self, closure=None):
         self._optimizer.step(closure)
