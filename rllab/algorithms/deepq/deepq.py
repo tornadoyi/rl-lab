@@ -46,7 +46,7 @@ class DeepQ(nn.Module):
         return final_actions.squeeze()
 
 
-    def learn(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
+    def forward(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
         # calculate q evaluation
         q_eval = self.net_q_eval(obs)
 
@@ -86,7 +86,7 @@ class DeepQ(nn.Module):
 
         # profiling
         indicators = {
-            'deepq/loss':                 (errors,                        lambda: indicator('scalar').cond('update')),
+            'deepq/loss':                 (errors,                     lambda: indicator('scalar').cond('update')),
             'deepq/td_error':             (tl.mean(td_error),          lambda: indicator('scalar').cond('update')),
             'deepq/q_eval_selected':      (tl.mean(q_eval_selected),   lambda: indicator('scalar').cond('update')),
             'deepq/q_target_selected':    (tl.mean(q_target_selected), lambda: indicator('scalar').cond('update')),
@@ -97,6 +97,7 @@ class DeepQ(nn.Module):
             indicators['gradients/{}'.format(k)] = (v.abs().mean(), lambda: indicator('scalar').cond('update'))
 
         return indicators
+
 
 
     def update_target_network(self):

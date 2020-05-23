@@ -24,6 +24,7 @@ class Trainer(object):
             profiling={},
             batch_size=32,
             device=None,
+            rank=-1,
             **_,
     ):
         # arguments
@@ -33,6 +34,7 @@ class Trainer(object):
         self.batch_size = batch_size
         self.target_network_update_freq = target_network_update_freq
         self.device = device
+        self.rank = rank
 
         # env
         self.env = envs.make(**env)
@@ -51,6 +53,8 @@ class Trainer(object):
         # optimizer
         opt = dict({'name':'Adam', 'lr':1e-3}, **optimizer)
         self.optimizer = optim.build(params=self.deepq.trained_parameters, **opt)
+        if rank >= 0: self.optimizer = distributed.Optimizer(self.optimizer)
+
 
         # replay buffer
         self.replay_buffer = replay_buffer.build(**rb)
@@ -93,7 +97,6 @@ class Trainer(object):
             if self.steps > self.learning_starts and self.steps % self.train_freq == 0:
                 obs, acs, rews, obs_n, dones = self.replay_buffer.sample(self.batch_size)
                 learn_info = self.deepq.learn(
-                    self.optimizer,
                     tl.as_tensor(obs, dtype=tl.float32, device=self.device),
                     tl.as_tensor(acs, dtype=tl.long, device=self.device),
                     tl.as_tensor(rews, dtype=tl.float32, device=self.device),
@@ -107,7 +110,8 @@ class Trainer(object):
                 self.deepq.update_target_network()
 
             # profiling
-            self.profile({'explore_epsilon': eps}, learn_info)
+            if self.rank <= 0:
+                self.profile({'explore_epsilon': eps}, learn_info)
 
             # next
             ob = ob_n
@@ -139,14 +143,15 @@ def train(dist=None, device=None, **kwargs):
     # single process
     if dist is None: return Trainer(device=device, **kwargs)()
 
-    distributed.launch(target=dist_trainer, kwargs={'device':device, 'kwargs': kwargs}, **dist)
+    distributed.launch(target=dist_train, kwargs={'device':device, 'kwargs': kwargs}, **dist)
 
 # distributed
-def dist_trainer(device, kwargs):
+def dist_train(device, kwargs):
+    rank = distributed.get_rank()
     # set device
     dist_device = device
     if device.type == 'cuda':
-        index = distributed.get_rank() % tl.cuda.device_count()
+        index = rank % tl.cuda.device_count()
         dist_device = tl.device('cuda:{}'.format(index))
 
-    Trainer(device=dist_device, **kwargs)()
+    Trainer(rank=rank, device=dist_device, **kwargs)()
