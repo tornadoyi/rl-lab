@@ -32,11 +32,11 @@ class GradientReducer(Optimizer):
 
     def _reudce_sum(self):
         for p in self._params:
-            dist.all_reduce(p.grad.data, dist.reduce_op.SUM)
+            dist.all_reduce(p.grad.data, dist.ReduceOp.SUM)
 
 
     def _reudce_mean(self):
         size = float(dist.get_world_size())
         for p in self._params:
-            dist.all_reduce(p.grad.data, dist.reduce_op.SUM)
+            dist.all_reduce(p.grad.data, dist.ReduceOp.SUM)
             p.grad.data = p.grad.data / size
