@@ -69,7 +69,8 @@ class Trainer(object):
         self.steps = 0
 
         # profiling
-        self.profiling = Profiling(self.env, step_func=lambda: self.steps, **profiling)
+        if self.rank <= 0:
+            self.profiling = Profiling(self.env, step_func=lambda: self.steps, **profiling)
 
 
     def __call__(self, *args, **kwargs):
