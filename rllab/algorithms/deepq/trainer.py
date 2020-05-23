@@ -97,6 +97,7 @@ class Trainer(object):
             if self.steps > self.learning_starts and self.steps % self.train_freq == 0:
                 obs, acs, rews, obs_n, dones = self.replay_buffer.sample(self.batch_size)
                 learn_info = self.deepq.learn(
+                    self.optimizer,
                     tl.as_tensor(obs, dtype=tl.float32, device=self.device),
                     tl.as_tensor(acs, dtype=tl.long, device=self.device),
                     tl.as_tensor(rews, dtype=tl.float32, device=self.device),
