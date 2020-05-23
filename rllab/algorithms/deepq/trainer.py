@@ -53,7 +53,7 @@ class Trainer(object):
         # optimizer
         opt = dict({'name':'Adam', 'lr':1e-3}, **optimizer)
         self.optimizer = optim.build(params=self.deepq.trained_parameters, **opt)
-        if rank >= 0: self.optimizer = distributed.Optimizer(self.optimizer)
+        if rank >= 0: self.optimizer = distributed.GradientReducer(self.optimizer)
 
 
         # replay buffer

@@ -1,4 +1,4 @@
 
 from torch.distributed import *
 from .launcher import *
-from .optimizer import Optimizer
+from .optimizer import *
