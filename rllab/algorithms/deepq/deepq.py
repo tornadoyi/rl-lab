@@ -46,7 +46,7 @@ class DeepQ(nn.Module):
         return final_actions.squeeze()
 
 
-    def forward(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
+    def learn(self, optimizer, obs, acs, rews, obs_n, dones, weights=None):
         # calculate q evaluation
         q_eval = self.net_q_eval(obs)
 
